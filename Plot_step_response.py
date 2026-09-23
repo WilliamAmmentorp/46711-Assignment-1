@@ -9,53 +9,39 @@ import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 
 def plot_step_response(A_manual, A_avr, A_avr_pss, total_time):
-    
-    # Time vector: 0 to 5 seconds
-    t = np.linspace(0, total_time, 1000)
-    
-    # Define initial conditions and delta_index for each case
-    # Assume Δδ is the first state in all cases
-    delta_index_manual = 0
-    delta_index_avr = 0
-    delta_index_avr_pss = 0
-    
+
+    # Time vector
+    t = np.arange(0, total_time, 0.001)
+
     # Initial condition: Δδ(0) = 5° = 0.087266 rad
+    delta_index = 0   # Δδ is the first state in all three cases
+
     x0_manual = np.zeros(6)
-    x0_manual[delta_index_manual] = 0.087266
-    
+    x0_manual[delta_index] = 0.087266
+
     x0_avr = np.zeros(9)
-    x0_avr[delta_index_avr] = 0.087266
-    
+    x0_avr[delta_index] = 0.087266
+
     x0_avr_pss = np.zeros(13)
-    x0_avr_pss[delta_index_avr_pss] = 0.087266
-    
-    # Simulate and plot Δδ for all three cases
+    x0_avr_pss[delta_index] = 0.087266
+
     plt.figure()
 
-    for case_name, A, x0, delta_index in [
-        ("Manual Excitation", A_manual, x0_manual, delta_index_manual),
-        ("AVR Only", A_avr, x0_avr, delta_index_avr),
-        ("AVR + PSS", A_avr_pss, x0_avr_pss, delta_index_avr_pss)
+    for case_name, A, x0 in [
+        ("Manual Excitation", A_manual, x0_manual),
+        ("AVR Only", A_avr, x0_avr),
+        ("AVR + PSS", A_avr_pss, x0_avr_pss)
     ]:
+        lamb, Phi = np.linalg.eig(A)   # eigenvalues, right eigenvectors
+        Psi = np.linalg.inv(Phi)       # left eigenvector matrix
 
-        # State-space equation: dx/dt = A*x
-        def state_derivative(time, x):
-            return A @ x
+        xt = np.zeros((len(x0), len(t)), dtype=complex)
+        for k in range(len(t)):
+            xt[:, k] = Phi.dot(np.exp(lamb*t[k]) * Psi.dot(x0))
 
-        # Numerically solve the state equations
-        sol = solve_ivp(
-            state_derivative,
-            [t[0], t[-1]],
-            x0,
-            t_eval=t
-        )
+        # Plot Δδ (real part — xt is complex)
+        plt.plot(t, xt[delta_index, :].real, label=case_name)
 
-        # Extract Δδ
-        delta_response = sol.y[delta_index, :]
-
-        # Plot Δδ
-        plt.plot(t, delta_response, label=case_name)
-    
     plt.title("Time Response of Δδ for All Three Cases")
     plt.xlabel("Time [s]")
     plt.ylabel("Δδ [rad]")
