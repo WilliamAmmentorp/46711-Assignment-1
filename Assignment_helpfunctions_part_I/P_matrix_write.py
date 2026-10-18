@@ -88,45 +88,34 @@ def latex_P_matrix(P,state_labels,Matlab_array,filename,maximum_col,bold_limit):
     return
 
 
-def excel_P_matrix(P,state_labels,Matlab_array,filename,bold_limit):
-    # P = Participation matrix
-    # state_labels = labels of entries in the statevector
-    # Matlab_array = True if the state_labels comes from a cell array in Matlab
-    # filename = Name of the file to write the latex document in
-    
-    limit = bold_limit # Limit for making value bold
-    # Style of fields
-    style = xlwt.easyxf(num_format_str='#,###0.000');
-    style0 = xlwt.easyxf('font: bold on', num_format_str='#,###0.000');
-    style_labels = xlwt.easyxf('border: left thin');    
-    style_lambda = xlwt.easyxf('border: top double');
-    
-    # Create workbook
-    wb = xlwt.Workbook()
-    ws = wb.add_sheet('Participation matrix')
-    
-    n1 = (P.shape)[0] # Shape of P
-    n2 = (P.shape)[1] # Shape of P
-    
-    # Write magnitude of P matrix
-    for i in range(0,n1):
-        for j in range(0,n2):
-            if np.abs(P[i,j]) > limit:
-                ws.write(i, j, np.abs(P[i,j]),style0)
-            else:
-                ws.write(i, j, np.abs(P[i,j]),style)
-            
-        # Write labels of state vector to excel
-        if (Matlab_array):
-            ws.write(i, n2, state_labels[i,0][0],style_labels)
-        else:
-            ws.write(i, n2, state_labels[i],style_labels)    
-    
-    # Write lamba values to table
-    for j in range(0,n2):
-        name = u'\N{GREEK SMALL LETTER LAMDA}' +'_' + str(j+1)
-        ws.write(n1, j,name,style_lambda)
-    
-    # Save workbook
+def excel_P_matrix(P, state_labels, Matlab_array, filename, bold_limit):
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Border, Side
+
+    limit = bold_limit
+    bold_font = Font(bold=True)
+    left_border = Border(left=Side(style='thin'))
+    top_double_border = Border(top=Side(style='double'))
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Participation matrix'
+
+    n1, n2 = P.shape
+
+    for i in range(n1):
+        for j in range(n2):
+            cell = ws.cell(row=i+1, column=j+1, value=round(float(np.abs(P[i, j])), 3))
+            if np.abs(P[i, j]) > limit:
+                cell.font = bold_font
+
+        label = state_labels[i, 0][0] if Matlab_array else state_labels[i]
+        label_cell = ws.cell(row=i+1, column=n2+1, value=label)
+        label_cell.border = left_border
+
+    for j in range(n2):
+        name = f"\N{GREEK SMALL LETTER LAMDA}_{j+1}"
+        cell = ws.cell(row=n1+1, column=j+1, value=name)
+        cell.border = top_double_border
+
     wb.save(filename)
-    return

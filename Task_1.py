@@ -4,7 +4,6 @@ import scipy.io as sio
 import numpy as np
 
 path = r"C:\Users\willi\OneDrive\Dokumenter\.DTU\Stability\46711-Assignment-1\Assignment_data"
-
 files = ["system_q1a.mat", "system_q1b.mat", "system_q1c.mat", "system_q2.mat"]
 
 # Load the files and print
@@ -71,23 +70,31 @@ f_A1c7, omega_A1c7 = find_frequency_and_damping(lambda_A1c[7])
 
 # Q1.3.2
 
-def plot_time_response(matrix, initial_angle, time_interval, title):
+
+def plot_time_response(matrix, initial_angle, time_interval, title, labels):
+    
     from scipy.integrate import solve_ivp
     import matplotlib.pyplot as plt
-
-    initial_condition = np.zeros(matrix.shape[0])
-    initial_condition[0] = initial_angle
-
-    def system_dynamics(t, y):
-        return matrix @ y
-
+    import numpy as np
+    from scipy.integrate import solve_ivp
     t_span = (time_interval[0], time_interval[1])
     t_eval = np.linspace(time_interval[0], time_interval[1], 1000)
 
-    solution = solve_ivp(system_dynamics, t_span, initial_condition, t_eval=t_eval)
+    plt.figure(figsize=(10, 6))  # one figure, created once
 
-    plt.figure(figsize=(10, 6))
-    plt.plot(solution.t, solution.y[0], label='Δδ (Rotor Angle)')
+    for A_i, label in zip(matrix, labels):
+        initial_condition = np.zeros(A_i.shape[0])
+        initial_condition[0] = initial_angle
+
+        solution = solve_ivp(
+            lambda t, y: A_i @ y,
+            t_span,
+            initial_condition,
+            t_eval=t_eval,
+        )
+
+        plt.plot(solution.t, solution.y[0], label=label)
+
     plt.title(title)
     plt.xlabel('Time (s)')
     plt.ylabel('Δδ (rad)')
@@ -96,7 +103,9 @@ def plot_time_response(matrix, initial_angle, time_interval, title):
     plt.show()
 
 t0 = 0
-delta0 = 5 * np.pi / 180  # Convert degrees to radians
-deltat = 5  # seconds
-for matrix, label in zip([A, A1b, A1c], ["System A", "System B", "System C"]):
-    plot_time_response(matrix, delta0, (t0, deltat), f"Time Response for {label}")
+delta0 = 5 * np.pi / 180
+deltat = 5
+matrix = [A, A1b, A1c]
+labels = ["System A", "System B", "System C"]
+
+plot_time_response(matrix, delta0, (t0, deltat), "Time Response for Different Systems", labels)

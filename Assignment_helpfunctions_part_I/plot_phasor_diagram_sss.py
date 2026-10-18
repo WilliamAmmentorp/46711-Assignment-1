@@ -25,7 +25,6 @@ def plot_phasors(P,C,L):
     ymin = 0;
     ymax = 0;
         
-    
     for i in range(0,total):
         plt.annotate('', xytext = (0, 0),  xy = (P[i,0], P[i,1]), \
                      xycoords='data', textcoords='data', \
